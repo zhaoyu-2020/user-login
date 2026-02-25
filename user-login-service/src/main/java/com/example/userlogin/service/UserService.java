@@ -11,9 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -62,12 +64,29 @@ public class UserService {
     }
 
     /**
-     * 获取所有用户
+     * 分页获取所有用户
      */
-    public List<UserVO> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(UserConverter::toVO)
-                .collect(Collectors.toList());
+    public Page<UserVO> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(UserConverter::toVO);
+    }
+
+    /**
+     * 根据用户名搜索用户（分页）
+     * 支持模糊查询（忽略大小写）
+     */
+    public Page<UserVO> searchUsersByUsername(String username, Pageable pageable) {
+        return userRepository.findByUsernameContainingIgnoreCase(username, pageable)
+                .map(UserConverter::toVO);
+    }
+
+    /**
+     * 根据邮箱搜索用户（分页）
+     * 支持模糊查询（忽略大小写）
+     */
+    public Page<UserVO> searchUsersByEmail(String email, Pageable pageable) {
+        return userRepository.findByEmailContainingIgnoreCase(email, pageable)
+                .map(UserConverter::toVO);
     }
 
     /**

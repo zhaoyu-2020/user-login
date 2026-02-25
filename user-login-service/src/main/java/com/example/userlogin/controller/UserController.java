@@ -10,8 +10,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -42,12 +45,70 @@ public class UserController {
     }
 
     /**
-     * 获取所有用户
+     * 分页获取所有用户
+     * @param page 页码（从0开始，默认0）
+     * @param size 每页大小（默认10）
+     * @param sortBy 排序字段（默认id，支持: id, username, email, createdAt, updatedAt）
+     * @param sortOrder 排序顺序（ASC或DESC，默认ASC）
      */
     @GetMapping
-    public ResponseEntity<List<UserVO>> getAllUsers() {
-        List<UserVO> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
+    public ResponseEntity<Page<UserVO>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortOrder) {
+        
+        @SuppressWarnings("null")
+        Sort.Direction direction = Sort.Direction.fromString(sortOrder.toUpperCase());
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        Page<UserVO> userPage = userService.getAllUsers(pageRequest);
+        return ResponseEntity.ok(userPage);
+    }
+
+    /**
+     * 根据用户名搜索用户（分页）
+     * @param username 用户名（支持模糊查询）
+     * @param page 页码（从0开始，默认0）
+     * @param size 每页大小（默认10）
+     * @param sortBy 排序字段（默认id）
+     * @param sortOrder 排序顺序（ASC或DESC，默认ASC）
+     */
+    @GetMapping("/search/username")
+    public ResponseEntity<Page<UserVO>> searchByUsername(
+            @RequestParam String username,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortOrder) {
+        
+        @SuppressWarnings("null")
+        Sort.Direction direction = Sort.Direction.fromString(sortOrder.toUpperCase());
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        Page<UserVO> userPage = userService.searchUsersByUsername(username, pageRequest);
+        return ResponseEntity.ok(userPage);
+    }
+
+    /**
+     * 根据邮箱搜索用户（分页）
+     * @param email 邮箱（支持模糊查询）
+     * @param page 页码（从0开始，默认0）
+     * @param size 每页大小（默认10）
+     * @param sortBy 排序字段（默认id）
+     * @param sortOrder 排序顺序（ASC或DESC，默认ASC）
+     */
+    @GetMapping("/search/email")
+    public ResponseEntity<Page<UserVO>> searchByEmail(
+            @RequestParam String email,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortOrder) {
+        
+        @SuppressWarnings("null")
+        Sort.Direction direction = Sort.Direction.fromString(sortOrder.toUpperCase());
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        Page<UserVO> userPage = userService.searchUsersByEmail(email, pageRequest);
+        return ResponseEntity.ok(userPage);
     }
 
     /**

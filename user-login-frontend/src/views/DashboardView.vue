@@ -98,6 +98,20 @@
             </template>
           </el-table-column>
         </el-table>
+
+        <!-- Pagination -->
+        <div class="pagination-wrap">
+          <el-pagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            background
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="totalUsers"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </div>
       </el-card>
     </main>
 
@@ -128,18 +142,36 @@ const showModal = ref(false)
 const editingUser = ref(null)
 const deletingId = ref(null)
 
+// Pagination state
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalUsers = ref(0)
+
 // ── Fetch ────────────────────────────────────────────────────────────────────
 async function fetchUsers() {
   loading.value = true
   fetchError.value = ''
   try {
-    const res = await getUsers()
-    users.value = res.data
+    // Spring Data page is 0-indexed, Element Plus is 1-indexed
+    const res = await getUsers(currentPage.value - 1, pageSize.value)
+    users.value = res.data.content
+    totalUsers.value = res.data.totalElements
   } catch (err) {
     fetchError.value = '加载数据失败，请刷新重试'
   } finally {
     loading.value = false
   }
+}
+
+// ── Pagination Events ────────────────────────────────────────────────────────
+function handleSizeChange(val) {
+  pageSize.value = val
+  fetchUsers()
+}
+
+function handleCurrentChange(val) {
+  currentPage.value = val
+  fetchUsers()
 }
 
 onMounted(fetchUsers)
@@ -245,7 +277,7 @@ function formatDate(dt) {
 .toolbar-left { display: flex; align-items: center; gap: 12px; }
 .section-title { font-size: 18px; font-weight: 600; color: var(--text-primary, #333); }
 
-/* ── Table Card ───────────────────── */
+/* ── Table & Pagination Card ──────── */
 .table-card {
   border-radius: var(--radius-lg, 12px);
   border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
@@ -254,6 +286,16 @@ function formatDate(dt) {
 
 :deep(.table-card .el-card__body) {
   padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pagination-wrap {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  background: var(--bg-color);
 }
 
 .id-badge {
