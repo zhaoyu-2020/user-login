@@ -33,6 +33,10 @@
           />
         </el-form-item>
 
+        <el-form-item style="margin-bottom: 5px;">
+          <el-checkbox v-model="rememberMe">记住密码</el-checkbox>
+        </el-form-item>
+
         <el-button type="primary" native-type="submit" class="btn-full" :loading="loading" size="large">
           登 录
         </el-button>
@@ -56,8 +60,22 @@ const router = useRouter()
 const auth = useAuthStore()
 
 const form = reactive({ username: '', password: '' })
+const rememberMe = ref(false)
 const loading = ref(false)
 const error = ref('')
+
+// Initialize from localStorage
+const savedCreds = localStorage.getItem('loginCreds')
+if (savedCreds) {
+  try {
+    const creds = JSON.parse(savedCreds)
+    form.username = creds.username || ''
+    form.password = creds.password || ''
+    rememberMe.value = true
+  } catch (e) {
+    localStorage.removeItem('loginCreds')
+  }
+}
 
 async function handleLogin() {
   if (!form.username || !form.password) {
@@ -68,6 +86,17 @@ async function handleLogin() {
   loading.value = true
   try {
     await auth.login(form)
+
+    // Handle remember me
+    if (rememberMe.value) {
+      localStorage.setItem('loginCreds', JSON.stringify({
+        username: form.username,
+        password: form.password
+      }))
+    } else {
+      localStorage.removeItem('loginCreds')
+    }
+
     router.push('/dashboard')
   } catch (err) {
     error.value = err.response?.data?.error || '登录失败，请检查用户名和密码'
